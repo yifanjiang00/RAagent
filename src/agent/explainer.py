@@ -1,3 +1,5 @@
+from utils.helpers import call_llm
+
 class Explainer:
     def explain_concept(self, concept):
         """
@@ -9,6 +11,6 @@ class Explainer:
         返回:
         str: 对该术语的详细解释和相关背景知识。
         """
-        # 这里可以添加调用外部API或数据库的逻辑来获取概念的解释
-        explanation = f"解释：{concept} 是一个重要的概念，涉及到..."
+        prompt = "请详细解释以下专业术语，并补充相关背景知识："
+        explanation = call_llm(concept, prompt=prompt)
         return explanation
