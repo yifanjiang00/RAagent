@@ -1,26 +1,23 @@
+from utils.helpers import call_llm
+
 class OutlineGenerator:
-    def generate_outline(self, requirements):
-        outline = []
+    def generate_outline(self, topic):
+        """
+        根据主题生成详细的提纲
         
-        # Example structure based on requirements
-        outline.append("I. Introduction")
-        outline.append("   A. Background")
-        outline.append("   B. Purpose of the Study")
+        参数:
+        topic (str): 需要生成提纲的主题
         
-        outline.append("II. Literature Review")
-        outline.append("   A. Key Studies")
-        outline.append("   B. Gaps in Research")
+        返回:
+        str: 结构化提纲
+        """
+        prompt = f"""为以下主题创建一个详细的内容提纲：{topic}
+        提纲应该包括：
+        1. 引言部分
+        2. 主要章节和子章节
+        3. 每个章节的关键点
+        4. 结论部分
+        请使用清晰的层次结构表示。"""
         
-        outline.append("III. Methodology")
-        outline.append("   A. Research Design")
-        outline.append("   B. Data Collection")
-        
-        outline.append("IV. Results")
-        outline.append("   A. Findings")
-        outline.append("   B. Discussion")
-        
-        outline.append("V. Conclusion")
-        outline.append("   A. Summary of Findings")
-        outline.append("   B. Future Work")
-        
+        outline = call_llm(prompt)
         return outline

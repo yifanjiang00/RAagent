@@ -1,7 +1,28 @@
+from utils.helpers import call_llm
+
 class Summarizer:
     def summarize_text(self, text):
-        # 这里可以使用自然语言处理库（如nltk或spaCy）来提取摘要
-        # 目前返回文本的前几句话作为示例摘要
-        sentences = text.split('. ')
-        summary = '. '.join(sentences[:2]) + '.' if sentences else ''
+        """
+        使用LLM生成文本摘要
+        
+        参数:
+        text (str): 需要摘要的文本
+        
+        返回:
+        str: 文本摘要
+        """
+        if not text or len(text.strip()) < 50:
+            return "文本过短，无法生成有意义的摘要。"
+        
+        prompt = f"""请为以下文本生成一个简洁的摘要：
+        
+        {text}
+        
+        要求：
+        1. 提取关键信息
+        2. 保持原意不变
+        3. 长度控制在原文的200字左右
+        4. 语言流畅自然"""
+        
+        summary = call_llm(prompt)
         return summary
