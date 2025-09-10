@@ -44,17 +44,6 @@ app.add_middleware(
 # 配置静态文件服务
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 阿里云百炼配置
-ALIYUN_BAILIAN_CONFIG = {
-    "base_url": "https://dashscope.aliyuncs.com/api/v1",
-    "api_key": os.getenv("DASHSCOPE_API_KEY"),
-    "model": "qwen-plus",
-    "enable_search": True
-}
-
-# 检查API密钥
-if not ALIYUN_BAILIAN_CONFIG["api_key"]:
-    raise ValueError("DASHSCOPE_API_KEY环境变量未设置")
 
 # 存储对话历史和文件
 conversation_histories = {}
@@ -64,42 +53,6 @@ uploaded_files = {}
 # 初始化阿里云百炼会话
 async def init_bailian_session():
     return aiohttp.ClientSession()
-
-
-# 调用阿里云百炼API
-async def call_bailian_api(session: aiohttp.ClientSession, messages: List[Dict[str, str]],
-                           temperature: float = 0.8, max_tokens: int = 2000) -> Dict[str, Any]:
-    """调用阿里云百炼的qwen-plus模型API"""
-    url = f"{ALIYUN_BAILIAN_CONFIG['base_url']}/services/aigc/text-generation/generation"
-    headers = {
-        "Authorization": f"Bearer {ALIYUN_BAILIAN_CONFIG['api_key']}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "model": ALIYUN_BAILIAN_CONFIG["model"],
-        "input": {
-            "messages": messages
-        },
-        "parameters": {
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "result_format": "message"
-        }
-    }
-
-    if ALIYUN_BAILIAN_CONFIG["enable_search"]:
-        payload["parameters"]["enable_search"] = True
-
-    try:
-        async with session.post(url, headers=headers, json=payload) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                error_text = await response.text()
-                raise HTTPException(status_code=response.status, detail=f"API调用失败: {error_text}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"调用阿里云API时发生错误: {str(e)}")
 
 
 # 处理研究任务
