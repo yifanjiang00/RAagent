@@ -18,7 +18,6 @@ def format_output(data):
 import os
 from openai import OpenAI
 
-api_key = os.getenv("DASHSCOPE_API_KEY")
 if not api_key:
     raise ValueError("环境变量 DASHSCOPE_API_KEY 未设置！")
 
