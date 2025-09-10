@@ -28,12 +28,18 @@
    ```
 
 ## 使用方法
+1. 配置API密钥
+   ```
+   set DASHSCOPE_API_KEY=your_api_key (Windows环境)
 
-1. 运行主程序：
+   export DASHSCOPE_API_KEY=your_api_key (Linux环境)
+   ```
+
+2. 运行主程序：
    ```
    python src/main.py
    ```
-2. 在Gradio界面中输入您的研究主题或问题，选择所需的功能，AI助手将为您提供相应的支持。
+3. 在Gradio界面中输入您的研究主题或问题，选择所需的功能，AI助手将为您提供相应的支持。
 
 ## 贡献
 
