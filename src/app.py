@@ -11,6 +11,8 @@ from datetime import datetime
 import shutil
 from pathlib import Path
 
+from agent import Retriever, Summarizer, Explainer, Comparer, OutlineGenerator
+
 # 数据模型定义
 from pydantic import BaseModel
 from typing import List, Optional
@@ -53,46 +55,6 @@ ALIYUN_BAILIAN_CONFIG = {
 # 检查API密钥
 if not ALIYUN_BAILIAN_CONFIG["api_key"]:
     raise ValueError("DASHSCOPE_API_KEY环境变量未设置")
-
-# 提示词
-retrieval_prompt = """你是一个专业的研究助手。请根据用户的研究主题，提供全面、准确的信息检索结果。
-包括关键概念、最新发展、相关理论和应用领域。使用Markdown格式组织内容，包括标题、列表、代码块等。
-确保信息结构清晰，分点说明。"""
-
-explanation_prompt = """你是一个专业知识解释助手。请清晰、全面地解释用户询问的专业概念，包括定义、背景、相关理论、应用场景和实际例子。
-使用易于理解的语言。使用Markdown格式组织内容，包括标题、列表、代码块等。确保信息结构清晰，分点说明。"""
-
-comparison_prompt = """你是一个专业的分析助手。请对用户提供的不同观点或理论进行全面的对比分析，包括各自的优点、缺点、适用场景和学术支持。提供平衡、客观的分析。
-使用Markdown格式组织内容，包括标题、列表、代码块等。确保信息结构清晰，分点说明。"""
-
-outline_prompt = """你是一个专业的学术写作助手。请根据用户的研究主题，生成一个结构合理、内容全面的论文或报告大纲。
-包括引言、文献综述、方法论、结果分析、结论等部分。使用Markdown格式组织内容，包括标题、列表、代码块等。确保信息结构清晰，分点说明。"""
-
-summary_prompt = """你是一个专业的学术研究助手。请对用户提供的文献内容进行摘要和分析，提炼关键观点、研究方法和结论。
-使用Markdown格式组织内容，包括标题、列表、代码块等。确保信息结构清晰，分点说明。"""
-
-RESEARCH_TASKS = {
-    "information_retrieval": {
-        "name": "信息检索",
-        "system_prompt": retrieval_prompt
-    },
-    "concept_explanation": {
-        "name": "概念解释",
-        "system_prompt": explanation_prompt
-    },
-    "viewpoint_comparison": {
-        "name": "观点对比",
-        "system_prompt": comparison_prompt
-    },
-    "outline_generation": {
-        "name": "大纲生成",
-        "system_prompt": outline_prompt
-    },
-    "literature_summary": {
-        "name": "文献摘要",
-        "system_prompt": summary_prompt
-    }
-}
 
 # 存储对话历史和文件
 conversation_histories = {}
@@ -141,17 +103,26 @@ async def call_bailian_api(session: aiohttp.ClientSession, messages: List[Dict[s
 
 
 # 处理研究任务
+retriever, summarizer, explainer, comparer, outlineGenerator = Retriever(), Summarizer(), Explainer(), Comparer(), OutlineGenerator()
 async def handle_research_task(session: aiohttp.ClientSession, task_type: str, user_query: str,
                                context: List[Dict[str, str]] = None, files: List[FileInfo] = None) -> str:
     """处理不同类型的研究任务"""
-    task_config = RESEARCH_TASKS.get(task_type, RESEARCH_TASKS["information_retrieval"])
+    if task_type == "concept_explanation":
+        agent = explainer
+    elif task_type == "viewpoint_comparison":
+        agent = comparer
+    elif task_type == "outline_generation":
+        agent = outlineGenerator
+    elif task_type == "literature_summary":
+        agent = summarizer
+    else: # 默认为信息检索
+        agent = retriever
 
+    # 历史消息
     messages = []
-    messages.append({"role": "system", "content": task_config["system_prompt"]})
-
     if context:
         messages.extend(context)
-
+    # 已上传文件
     file_content = ""
     if files:
         file_content = "\n".join([f"文件 '{f.filename}' 的内容已上传，可供参考。" for f in files])
@@ -160,14 +131,16 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
     if file_content:
         user_message = f"{user_query}\n\n相关文件信息:\n{file_content}"
 
+    """ 以下为原代码：
     messages.append({"role": "user", "content": user_message})
-
     response = await call_bailian_api(session, messages)
 
     if "output" in response and "choices" in response["output"] and len(response["output"]["choices"]) > 0:
         return response["output"]["choices"][0]["message"]["content"]
     else:
-        return "抱歉，我没有得到有效的响应。请稍后再试。"
+        return "抱歉，我没有得到有效的响应。请稍后再试。
+    """
+    return agent.reply(user_message, messages=messages)
 
 
 # 分析查询意图
