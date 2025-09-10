@@ -1,7 +1,0 @@
-gradio
-requests
-nltk
-beautifulsoup4
-pandas
-numpy
-openai

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能科研助手</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 添加代码高亮样式 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-graduation-cap"></i> 智能科研助手</h1>
+            <p>帮助您高效完成论文写作、资料检索与学术研究</p>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="feature-card">
+                    <h3><i class="fas fa-search"></i> 信息检索</h3>
+                    <p>输入您的研究主题或问题，获取最新的网络信息。</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-file-pdf"></i> 文献分析</h3>
+                    <p>上传PDF或文本文件，快速获取摘要和关键观点。</p>
+                    <div class="file-upload" id="fileUpload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>点击或拖放文件到此处</p>
+                        <input type="file" id="fileInput" multiple>
+                    </div>
+                    <div class="file-list" id="fileList"></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-lightbulb"></i> 快速操作</h3>
+                    <div class="action-buttons">
+                        <button class="action-btn" data-command="解释概念">概念解释</button>
+                        <button class="action-btn" data-command="观点对比">观点对比</button>
+                        <button class="action-btn" data-command="生成大纲">大纲生成</button>
+                        <button class="action-btn" data-command="文献综述">文献摘要</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-header">
+                    <i class="fas fa-comments"></i> 科研助手对话
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <h2>欢迎使用智能科研助手！</h2>
+                        <p>我可以帮助您搜索资料、解释概念、生成大纲等。</p>
+                        <p>请告诉我您的研究主题或需要帮助的内容。</p>
+                    </div>
+                </div>
+
+                <div class="chat-input">
+                    <textarea id="messageInput" placeholder="输入您的问题或研究主题..." rows="1"></textarea>
+                    <button id="sendMessage"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>智能科研助手 &copy; 2025</p>
+        </footer>
+    </div>
+
+    <!-- 添加Markdown和代码高亮库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>
+        // 配置marked选项
+        marked.setOptions({
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    return hljs.highlight(code, { language: lang }).value;
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            langPrefix: 'hljs language-'
+        });
+    </script>
+    <script src="./js/script.js"></script>
+</body>
+</html>
