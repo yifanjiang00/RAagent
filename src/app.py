@@ -44,7 +44,6 @@ app.add_middleware(
 # 配置静态文件服务
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
 # 存储对话历史和文件
 conversation_histories = {}
 uploaded_files = {}
@@ -84,15 +83,6 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
     if file_content:
         user_message = f"{user_query}\n\n相关文件信息:\n{file_content}"
 
-    """ 以下为原代码：
-    messages.append({"role": "user", "content": user_message})
-    response = await call_bailian_api(session, messages)
-
-    if "output" in response and "choices" in response["output"] and len(response["output"]["choices"]) > 0:
-        return response["output"]["choices"][0]["message"]["content"]
-    else:
-        return "抱歉，我没有得到有效的响应。请稍后再试。
-    """
     return agent.reply(user_message, messages=messages)
 
 
