@@ -11,13 +11,12 @@ from datetime import datetime
 import shutil
 from pathlib import Path
 
-from agent import Retriever, Summarizer, Explainer, Comparer, OutlineGenerator
+from agent import Retriever, Summarizer, Explainer, Comparer, OutlineGenerator, IntentAnalyzer
 
 # 数据模型定义
 from pydantic import BaseModel
 from typing import List, Optional
 from utils.file_parser import extract_text
-
 
 class ChatResponse(BaseModel):
     response: str
@@ -58,7 +57,7 @@ async def init_bailian_session():
 
 
 # 处理研究任务
-retriever, summarizer, explainer, comparer, outlineGenerator = Retriever(), Summarizer(), Explainer(), Comparer(), OutlineGenerator()
+retriever, summarizer, explainer, comparer, outlineGenerator, intent_analyzer = Retriever(), Summarizer(), Explainer(), Comparer(), OutlineGenerator(), IntentAnalyzer()
 async def handle_research_task(session: aiohttp.ClientSession, task_type: str, user_query: str,
                                context: List[Dict[str, str]] = None, files: List[FileInfo] = None) -> str:
     """处理不同类型的研究任务"""
@@ -76,7 +75,12 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
     # 历史消息
     messages = []
     if context:
-        messages.extend(context)
+        # 将上下文转换为模型需要的格式
+        for msg in context:
+            if msg["role"] == "user":
+                messages.append({"role": "user", "content": msg["content"]})
+            else:
+                messages.append({"role": "assistant", "content": msg["content"]})
     # 处理上传的文件内容
     file_content = ""
     if files:
@@ -98,8 +102,9 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
 
 # 分析查询意图
 def analyze_query_intent(query: str) -> str:
+    return intent_analyzer.analyze(query)
+'''
     query_lower = query.lower()
-
     if any(word in query_lower for word in ["解释", "什么是", "含义", "定义"]):
         return "concept_explanation"
     elif any(word in query_lower for word in ["对比", "比较", "区别", "差异"]):
@@ -110,6 +115,8 @@ def analyze_query_intent(query: str) -> str:
         return "literature_summary"
     else:
         return "information_retrieval"
+'''
+
 
 
 # 修改save_uploaded_file函数，使其能够读取文件内容
@@ -161,7 +168,8 @@ async def serve_frontend():
 async def chat_endpoint(
         message: str = Form(...),
         session_id: str = Form(...),
-        files: Union[UploadFile, List[UploadFile], None] = File(default=None)
+        files: Union[UploadFile, List[UploadFile], None] = File(default=None),
+        use_previous_files: bool = Form(False)  # 新增参数，是否使用之前上传的文件
 ):
     """处理聊天请求"""
     try:
@@ -171,6 +179,7 @@ async def chat_endpoint(
         conversation_history = conversation_histories[session_id]
 
         file_infos = []
+        current_files = []  # 本次请求要使用的文件
 
         file_list: List[UploadFile] = []
         if files:
@@ -185,9 +194,18 @@ async def chat_endpoint(
                 print(f"文件名: {file.filename}, 类型: {type(file)}")
                 file_info = await save_uploaded_file(file)
                 file_infos.append(file_info)
+                # 将新上传的文件添加到会话文件列表
                 if session_id not in uploaded_files:
                     uploaded_files[session_id] = []
                 uploaded_files[session_id].append(file_info)
+        
+        # 确定要使用的文件
+        if use_previous_files and session_id in uploaded_files:
+            # 使用所有之前上传的文件
+            current_files = uploaded_files[session_id]
+        else:
+            # 只使用本次上传的文件
+            current_files = file_infos
 
         if message.lower() in ["hi", "hello", "你好", "您好", "嗨"]:
             response_text = "你好！我是智能科研助手，可以帮助你搜索资料、解释概念、生成大纲等。请告诉我你需要什么帮助？"
@@ -195,7 +213,7 @@ async def chat_endpoint(
             intent = analyze_query_intent(message)
 
             context = []
-            for msg in conversation_history[-6:]:
+            for msg in conversation_history[-6:]:  # 保留最近6轮对话作为上下文
                 context.append({"role": "user", "content": msg["user"]})
                 context.append({"role": "assistant", "content": msg["assistant"]})
 
@@ -204,14 +222,14 @@ async def chat_endpoint(
                 intent,
                 message,
                 context,
-                uploaded_files.get(session_id, [])
+                current_files  # 使用确定的文件列表
             )
 
         conversation_histories[session_id].append({
             "user": message,
             "assistant": response_text,
             "timestamp": datetime.now().isoformat(),
-            "files": [f.filename for f in file_infos]
+            "files": [f.filename for f in file_infos]  # 只记录本次上传的文件
         })
 
         return ChatResponse(

@@ -39,18 +39,31 @@ def call_llm(question, prompt=None, messages=None, model="qwen-plus") -> str:
          模型生成的回答字符串
      """
     try:
-        messages = messages if messages else []
+        # 初始化消息列表
+        chat_messages = []
+        
+        # 添加系统提示（如果有）
         if prompt:
-            messages.append({"role": "system", "content": prompt})
-        messages.append({"role": "user", "content": question})
-        response = client.chat.completions.create(model=model, messages=messages)
+            chat_messages.append({"role": "system", "content": prompt})
+        
+        # 添加历史消息（如果有）
+        if messages:
+            chat_messages.extend(messages)
+        
+        # 添加当前问题
+        chat_messages.append({"role": "user", "content": question})
+        
+        # 调用API
+        response = client.chat.completions.create(
+            model=model, 
+            messages=chat_messages
+        )
         answer = str(response.choices[0].message.content)
+        
+        return answer
     except Exception as e:
         print(f"LLM调用中发生错误：{e}")
-        answer = "抱歉，出错了"
-    messages.append({"role": "agent", "content": answer})
-
-    return answer
+        return "抱歉，处理您的请求时出现了错误。请稍后再试。"
 
 
 # 提示词合集
