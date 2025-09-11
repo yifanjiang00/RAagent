@@ -31,6 +31,24 @@ document.addEventListener('DOMContentLoaded', function() {
         messageInput.value = '';
         messageInput.style.height = 'auto';
 
+        // 如果有上传文件，显示文件信息
+        if (uploadedFiles.length > 0) {
+            const fileMessage = document.createElement('div');
+            fileMessage.className = 'message user-message';
+
+            let fileListHtml = '<div class="file-message"><i class="fas fa-paperclip"></i> 已上传文件:';
+            uploadedFiles.forEach(file => {
+                fileListHtml += `<div class="file-item">${file.name}</div>`;
+            });
+            fileListHtml += '</div>';
+
+            fileMessage.innerHTML = fileListHtml;
+            chatMessages.appendChild(fileMessage);
+        }
+
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+
         // 显示AI正在输入
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'message ai-message';
@@ -47,7 +65,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // 准备FormData，包含文件和文本消息
             const formData = new FormData();
-            formData.append('message', message);
+            if (message) {
+                formData.append('message', message);
+            }
             formData.append('session_id', sessionId);
 
             // 添加上传的文件
@@ -62,7 +82,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // 尝试获取更详细的错误信息
+                let errorDetail = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorDetail += `, detail: ${JSON.stringify(errorData)}`;
+                } catch (e) {
+                    // 如果无法解析 JSON 错误响应，使用原始文本
+                    const errorText = await response.text();
+                    errorDetail += `, text: ${errorText}`;
+                }
+                throw new Error(errorDetail);
             }
 
             const data = await response.json();
@@ -121,6 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 滚动到底部
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
 
     // 更新文件列表显示
     function updateFileList() {
@@ -204,3 +235,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+

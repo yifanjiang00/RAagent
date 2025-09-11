@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any , Union
 import os
 import uuid
 import aiohttp
@@ -16,6 +16,7 @@ from agent import Retriever, Summarizer, Explainer, Comparer, OutlineGenerator
 # 数据模型定义
 from pydantic import BaseModel
 from typing import List, Optional
+from utils.file_parser import extract_text
 
 
 class ChatResponse(BaseModel):
@@ -28,6 +29,7 @@ class FileInfo(BaseModel):
     filename: str
     path: str
     upload_time: datetime
+    content: str = ""
 
 
 app = FastAPI(title="智能科研助手API", version="1.0.0")
@@ -74,10 +76,17 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
     messages = []
     if context:
         messages.extend(context)
-    # 已上传文件
+    # 处理上传的文件内容
     file_content = ""
     if files:
-        file_content = "\n".join([f"文件 '{f.filename}' 的内容已上传，可供参考。" for f in files])
+        # 将所有文件内容合并
+        file_contents = []
+        for f in files:
+            if hasattr(f, 'content'):
+                file_contents.append(f"文件 '{f.filename}' 的内容:\n{f.content}")
+            else:
+                file_contents.append(f"文件 '{f.filename}' 的内容无法读取")
+        file_content = "\n\n".join(file_contents)
 
     user_message = user_query
     if file_content:
@@ -102,7 +111,7 @@ def analyze_query_intent(query: str) -> str:
         return "information_retrieval"
 
 
-# 保存上传的文件
+# 修改save_uploaded_file函数，使其能够读取文件内容
 async def save_uploaded_file(file: UploadFile) -> FileInfo:
     file_id = str(uuid.uuid4())
     file_extension = os.path.splitext(file.filename)[1]
@@ -110,14 +119,19 @@ async def save_uploaded_file(file: UploadFile) -> FileInfo:
 
     os.makedirs("uploads", exist_ok=True)
 
+    # 保存文件
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
+    content = extract_text(file_path)
+
 
     return FileInfo(
         id=file_id,
         filename=file.filename,
         path=file_path,
-        upload_time=datetime.now()
+        upload_time=datetime.now(),
+        content=content  # 添加内容字段
     )
 
 
@@ -146,7 +160,7 @@ async def serve_frontend():
 async def chat_endpoint(
         message: str = Form(...),
         session_id: str = Form(...),
-        files: Optional[List[UploadFile]] = File(None)
+        files: Union[UploadFile, List[UploadFile], None] = File(default=None)
 ):
     """处理聊天请求"""
     try:
@@ -156,8 +170,18 @@ async def chat_endpoint(
         conversation_history = conversation_histories[session_id]
 
         file_infos = []
+
+        file_list: List[UploadFile] = []
         if files:
-            for file in files:
+            if isinstance(files, list):
+                file_list = files
+            else:
+                file_list = [files]
+
+        if file_list:
+            print(f"收到 {len(file_list)} 个文件")
+            for file in file_list:
+                print(f"文件名: {file.filename}, 类型: {type(file)}")
                 file_info = await save_uploaded_file(file)
                 file_infos.append(file_info)
                 if session_id not in uploaded_files:
