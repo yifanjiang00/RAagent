@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 使用Marked.js解析Markdown
         messageContent.innerHTML = marked.parse(content);
 
-
         // 为代码块添加高亮
         messageContent.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);

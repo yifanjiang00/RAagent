@@ -45,7 +45,6 @@ app.add_middleware(
 # 配置静态文件服务
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
 # 存储对话历史和文件
 conversation_histories = {}
 uploaded_files = {}
