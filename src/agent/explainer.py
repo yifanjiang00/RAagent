@@ -7,7 +7,7 @@ class Explainer:
         
         参数:
         concept (str): 需要解释的专业术语。
-        
+        messages(List[Dict[str, str]]): 对话历史（可选）
         返回:
         str: 对该术语的详细解释和相关背景知识。
         """

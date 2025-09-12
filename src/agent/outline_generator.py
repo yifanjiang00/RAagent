@@ -7,7 +7,7 @@ class OutlineGenerator:
 
         参数:
         topic (str): 需要生成提纲的主题
-
+        messages(List[Dict[str, str]]): 对话历史（可选）
         返回:
         str: 结构化提纲
         """
