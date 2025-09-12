@@ -93,6 +93,8 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
         agent = outline_generator
     elif task_type == "literature_summary":
         agent = summarizer
+    elif task_type == "information_retrieval":
+        agent = retriever
     elif task_type == "plan": # 自动规划
         agent = planner
         tasks = agent.reply(user_query, messages=context)
