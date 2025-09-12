@@ -20,9 +20,26 @@
             <div class="sidebar">
                 <div class="feature-card">
                     <h3><i class="fas fa-search"></i> 信息检索</h3>
-                    <p>输入您的研究主题或问题，获取最新的网络信息。</p>
+                    <p>输入您的研究主题或问题，获取最新网络结果！</p>
                 </div>
-
+            <!-- 新增：模式切换 -->
+            <div class="feature-card">
+                <h3><i class="fas fa-toggle-on"></i> 模式切换</h3>
+                <div class="toggle-button-group">
+                    <div class="toggle-item">
+                        <span>单步应答</span>
+                        <button class="toggle-btn" id="intentAnalysisToggle" data-state="on">
+                            <span class="toggle-slider"></span>
+                        </button>
+                    </div>
+                    <div class="toggle-item">
+                        <span>链式思考（可能花费较长时间）</span>
+                        <button class="toggle-btn" id="planToggle" data-state="off">
+                            <span class="toggle-slider"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
                 <div class="feature-card">
                     <h3><i class="fas fa-file-pdf"></i> 文献分析</h3>
                     <p>上传PDF或文本文件，快速获取摘要和关键观点。</p>
@@ -37,10 +54,10 @@
                 <div class="feature-card">
                     <h3><i class="fas fa-lightbulb"></i> 快速操作</h3>
                     <div class="action-buttons">
-                        <button class="action-btn" data-command="解释概念">概念解释</button>
-                        <button class="action-btn" data-command="观点对比">观点对比</button>
-                        <button class="action-btn" data-command="生成大纲">大纲生成</button>
-                        <button class="action-btn" data-command="文献综述">文献摘要</button>
+                        <button class="action-btn" data-command="概念解释：">概念解释</button>
+                        <button class="action-btn" data-command="观点对比：">观点对比</button>
+                        <button class="action-btn" data-command="大纲生成：">大纲生成</button>
+                        <button class="action-btn" data-command="文献摘要：">文献摘要</button>
                     </div>
                 </div>
             </div>

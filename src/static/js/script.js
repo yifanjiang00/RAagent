@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('message', message);
             }
             formData.append('session_id', sessionId);
+            formData.append('mode', getCurrentMode()); // 新增：传入mode
 
             // 添加上传的文件
             uploadedFiles.forEach(file => {
@@ -83,13 +84,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 // 尝试获取更详细的错误信息
+                clonedResponse = response.clone(); // 克隆响应流，防止错误响应中多次读取
                 let errorDetail = `HTTP error! status: ${response.status}`;
                 try {
                     const errorData = await response.json();
                     errorDetail += `, detail: ${JSON.stringify(errorData)}`;
                 } catch (e) {
                     // 如果无法解析 JSON 错误响应，使用原始文本
-                    const errorText = await response.text();
+                    const errorText = await clonedResponse.text();
                     errorDetail += `, text: ${errorText}`;
                 }
                 throw new Error(errorDetail);
@@ -231,8 +233,57 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const command = this.getAttribute('data-command');
             messageInput.value = command;
-            //sendMessage();
         });
     });
+
+    // 新增：模式切换
+    const intentAnalysisToggle = document.getElementById('intentAnalysisToggle');
+    const planToggle = document.getElementById('planToggle');
+
+    // 同步状态：确保只有一个为 on
+    function syncToggles(exceptButton) {
+        [intentAnalysisToggle, planToggle].forEach(btn => {
+            if (btn !== exceptButton && btn.getAttribute('data-state') === 'on') {
+                btn.setAttribute('data-state', 'off');
+            }
+        });
+    }
+
+    // 切换状态函数
+    function setupToggle(button) {
+        button.addEventListener('click', function () {
+            const currentState = this.getAttribute('data-state');
+            // 如果已经是 on，点击无效
+            if (currentState === 'on') return;
+            // 当前按钮设为 on
+            this.setAttribute('data-state', 'on');
+            // 关闭另一个
+            syncToggles(this);
+            // 日志输出
+            if (this.id === 'intentAnalysisToggle') {
+                console.log("模式切换：意图识别已启用");
+            } else if (this.id === 'planToggle') {
+                console.log("模式切换：规划模式已启用");
+            }
+        });
+    }
+
+    // 初始化 toggle 按钮
+    setupToggle(intentAnalysisToggle);
+    setupToggle(planToggle);
+    // 页面加载时设置默认状态
+    window.addEventListener('DOMContentLoaded', () => {
+        intentAnalysisToggle.setAttribute('data-state', 'on');
+        planToggle.setAttribute('data-state', 'off');
+    });
+    // 获取状态
+    function getCurrentMode() {
+        if (intentAnalysisToggle.getAttribute('data-state') === 'on') {
+            return 'analyze';
+        } else if (planToggle.getAttribute('data-state') === 'on') {
+            return 'plan';
+        }
+        return 'analyze'; // fallback
+    }
 });
 
