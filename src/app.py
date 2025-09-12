@@ -11,7 +11,7 @@ from datetime import datetime
 import shutil
 from pathlib import Path
 
-from agent import Retriever, Summarizer, Explainer, Comparer, OutlineGenerator, IntentAnalyzer
+from agent import Retriever, Summarizer, Explainer, Comparer, OutlineGenerator, IntentAnalyzer, Planner
 
 # 数据模型定义
 from pydantic import BaseModel
@@ -56,21 +56,9 @@ async def init_bailian_session():
 
 
 # 处理研究任务
-retriever, summarizer, explainer, comparer, outlineGenerator, intent_analyzer = Retriever(), Summarizer(), Explainer(), Comparer(), OutlineGenerator(), IntentAnalyzer()
+retriever, summarizer, explainer, comparer, outline_generator, intent_analyzer, planner = Retriever(), Summarizer(), Explainer(), Comparer(), OutlineGenerator(), IntentAnalyzer(), Planner()
 async def handle_research_task(session: aiohttp.ClientSession, task_type: str, user_query: str,
                                context: List[Dict[str, str]] = None, files: List[FileInfo] = None) -> str:
-    """处理不同类型的研究任务"""
-    if task_type == "concept_explanation":
-        agent = explainer
-    elif task_type == "viewpoint_comparison":
-        agent = comparer
-    elif task_type == "outline_generation":
-        agent = outlineGenerator
-    elif task_type == "literature_summary":
-        agent = summarizer
-    else: # 默认为信息检索
-        agent = retriever
-
     # 历史消息
     messages = []
     if context:
@@ -96,26 +84,58 @@ async def handle_research_task(session: aiohttp.ClientSession, task_type: str, u
     if file_content:
         user_message = f"{user_query}\n\n相关文件信息:\n{file_content}"
 
+    """处理不同类型的研究任务"""
+    if task_type == "concept_explanation":
+        agent = explainer
+    elif task_type == "viewpoint_comparison":
+        agent = comparer
+    elif task_type == "outline_generation":
+        agent = outline_generator
+    elif task_type == "literature_summary":
+        agent = summarizer
+    elif task_type == "plan": # 自动规划
+        agent = planner
+        tasks = agent.reply(user_query, messages=context)
+        replies = []
+        for task in tasks:
+            try:
+                # 判断任务类型
+                if task["name"] == "Retriever":
+                    agent = retriever
+                elif task["name"] == "Summarizer":
+                    agent = summarizer
+                elif task["name"] == "Comparer":
+                    agent = comparer
+                elif task["name"] == "Explainer":
+                    agent = explainer
+                elif task["name"] == "OutlineGenerator":
+                    agent = outline_generator
+                else:
+                    # 无效工具调用
+                    replies.append("")
+                    continue
+
+                task_content = task["content"]
+                if isinstance(task_content, int):
+                    task_content = replies[task_content]
+
+                task_reply = agent.reply(task_content, messages=messages)
+                replies.append(task_reply)
+            except Exception as e:
+                # 工具调用错误
+                replies.append(f"错误：{e}")
+        return replies[-1]
+    else:
+        print(f"任务类型错误：{task_type}")
+        return "出错了！"
+
+
     return agent.reply(user_message, messages=messages)
 
 
 # 分析查询意图
 def analyze_query_intent(query: str) -> str:
     return intent_analyzer.analyze(query)
-'''
-    query_lower = query.lower()
-    if any(word in query_lower for word in ["解释", "什么是", "含义", "定义"]):
-        return "concept_explanation"
-    elif any(word in query_lower for word in ["对比", "比较", "区别", "差异"]):
-        return "viewpoint_comparison"
-    elif any(word in query_lower for word in ["大纲", "结构", "提纲", "框架"]):
-        return "outline_generation"
-    elif any(word in query_lower for word in ["摘要", "总结", "概括", "文献"]):
-        return "literature_summary"
-    else:
-        return "information_retrieval"
-'''
-
 
 
 # 修改save_uploaded_file函数，使其能够读取文件内容
@@ -167,6 +187,7 @@ async def serve_frontend():
 async def chat_endpoint(
         message: str = Form(...),
         session_id: str = Form(...),
+        mode: str = Form(...),
         files: Union[UploadFile, List[UploadFile], None] = File(default=None),
         use_previous_files: bool = Form(False)  # 新增参数，是否使用之前上传的文件
 ):
@@ -209,8 +230,10 @@ async def chat_endpoint(
         if message.lower() in ["hi", "hello", "你好", "您好", "嗨"]:
             response_text = "你好！我是智能科研助手，可以帮助你搜索资料、解释概念、生成大纲等。请告诉我你需要什么帮助？"
         else:
-            intent = analyze_query_intent(message)
-
+            if mode == "analyze":
+                intent = analyze_query_intent(message)
+            else:  # mode == "plan"
+                intent = "plan"
             context = []
             for msg in conversation_history[-6:]:  # 保留最近6轮对话作为上下文
                 context.append({"role": "user", "content": msg["user"]})
