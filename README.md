@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-智能科研助手是一个旨在帮助大学生在写论文和做报告时快速查阅资料、整理信息和理解概念的AI代理。该项目通过集成多个功能模块，提供信息检索、文献摘要、概念解释、观点对比和大纲生成等服务。
+智能科研助手是一个旨在帮助大学生在写论文和做报告时快速查阅资料、整理信息和理解概念的 AI 代理。该项目通过集成多个功能模块，提供信息检索、文献摘要、概念解释、观点对比和大纲生成等服务。
 
 ## 功能
 
@@ -31,11 +31,18 @@
    ```
 
 ## 使用方法
-1. 配置API密钥
+1. 配置 API 密钥（百炼）：
    ```
    set DASHSCOPE_API_KEY=your_api_key (Windows环境)
 
    export DASHSCOPE_API_KEY=your_api_key (Linux环境)
+   ```
+
+   为使用 Google Scholar 接入 Agent 的功能，还需要配置 Serp API：
+   ```
+   set SERP_API_KEY=your_api_key (Windows环境)
+
+   export SERP_API_KEY=your_api_key (Linux环境)
    ```
 
 2. 运行主程序：
@@ -43,7 +50,7 @@
    cd src
    python app.py
    ```
-3. 在浏览器中打开页面（localhost:8000），开始体验智能科研助手
+3. 在浏览器中打开页面（localhost:8000），开始体验智能科研助手。
 
 ## 贡献
 
@@ -51,5 +58,5 @@
 
 ## 许可证
 
-该项目遵循MIT许可证。
+该项目遵循 MIT 许可证。
 
